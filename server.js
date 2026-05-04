@@ -1,17 +1,25 @@
-const express = require("express")
-const cors = require("cors")
+const express = require("express");
+const cors = require("cors");
 
-const presentesRoutes = require("./routes/presentes")
+const presentesRoutes = require("./routes/presentes");
 
-const app = express()
+const app = express();
 
-app.use(cors())
-app.use(express.json())
+// Middlewares
+app.use(cors());
+app.use(express.json());
 
-app.use("/api/presentes",presentesRoutes)
+// Rotas
+app.use("/api/presentes", presentesRoutes);
 
-app.listen(3000,()=>{
+// Rota básica pra teste (importante no Render)
+app.get("/", (req, res) => {
+  res.send("API do Chá de Panela está rodando 🚀");
+});
 
-console.log("API rodando na porta 3000")
+// Porta dinâmica (OBRIGATÓRIO no Render)
+const PORT = process.env.PORT || 3000;
 
-})
+app.listen(PORT, () => {
+  console.log(`API rodando na porta ${PORT}`);
+});
