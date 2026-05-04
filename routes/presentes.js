@@ -1,63 +1,60 @@
-const express = require("express")
-const router = express.Router()
-const db = require("../db")
+const express = require("express");
+const router = express.Router();
+const db = require("../db");
 
 /* LISTAR PRESENTES */
 
-router.get("/", async (req,res)=>{
+router.get("/", async (req, res) => {
+  try {
+    const result = await db.query(
+      "SELECT * FROM presentes ORDER BY id"
+    );
 
-try{
+    res.json(result.rows);
 
-const result = await db.query(
-"SELECT * FROM presentes ORDER BY id"
-)
+  } catch (err) {
+    console.error("Erro ao listar presentes:", err);
+    res.status(500).json({ erro: "Erro ao buscar presentes" });
+  }
+});
 
-res.json(result.rows)
-
-}catch(err){
-
-console.error(err)
-res.status(500).json({erro:"Erro ao buscar presentes"})
-
-}
-
-})
 
 /* ESCOLHER PRESENTE */
 
-router.post("/:id/escolher", async (req,res)=>{
+router.post("/:id/escolher", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const { nome } = req.body;
 
-try{
+    // validação básica
+    if (!nome || nome.trim() === "") {
+      return res.status(400).json({
+        erro: "Nome é obrigatório"
+      });
+    }
 
-const id = req.params.id
-const { nome } = req.body
+    const result = await db.query(
+      `UPDATE presentes
+       SET escolhido = true,
+           escolhido_por = $1
+       WHERE id = $2 AND escolhido = false
+       RETURNING *`,
+      [nome, id]
+    );
 
-const result = await db.query(
-`UPDATE presentes
-SET escolhido = true,
-escolhido_por = $1
-WHERE id = $2 AND escolhido = false
-RETURNING *`,
-[nome,id]
-)
+    if (result.rowCount === 0) {
+      return res.status(400).json({
+        erro: "Este presente já foi escolhido"
+      });
+    }
 
-if(result.rowCount === 0){
+    // retorna o item atualizado (melhor pro frontend)
+    res.json(result.rows[0]);
 
-return res.status(400).json({
-erro:"Este presente já foi escolhido"
-})
+  } catch (err) {
+    console.error("Erro ao escolher presente:", err);
+    res.status(500).json({ erro: "Erro ao escolher presente" });
+  }
+});
 
-}
-
-res.json({status:"ok"})
-
-}catch(err){
-
-console.error(err)
-res.status(500).json({erro:"Erro ao escolher presente"})
-
-}
-
-})
-
-module.exports = router
+module.exports = router;
